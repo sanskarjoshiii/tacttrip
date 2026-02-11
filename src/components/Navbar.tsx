@@ -37,6 +37,7 @@ const Navbar = () => {
     { to: '/destinations', label: 'Destinations', icon: MapPin },
     { to: '/packages', label: 'Packages', icon: Package },
     { to: '/hotels', label: 'Hotels', icon: Hotel },
+    { to: '/flights', label: 'Book Trip', icon: Plane },
     { to: '/about', label: 'About', icon: Info },
   ];
 

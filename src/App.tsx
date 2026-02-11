@@ -18,6 +18,9 @@ import About from "./pages/About";
 import Packages from "./pages/Packages";
 import PackageDetails from "./pages/PackageDetails";
 import BookingConfirmation from "./pages/BookingConfirmation";
+import FlightBooking from "./pages/FlightBooking";
+import HotelBooking from "./pages/HotelBooking";
+import BookingSummary from "./pages/BookingSummary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +40,21 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/destinations" element={<Destinations />} />
             <Route path="/hotels" element={<Hotels />} />
+            <Route path="/flights" element={
+              <ProtectedRoute>
+                <FlightBooking />
+              </ProtectedRoute>
+            } />
+            <Route path="/hotels-booking" element={
+              <ProtectedRoute>
+                <HotelBooking />
+              </ProtectedRoute>
+            } />
+            <Route path="/booking-summary" element={
+              <ProtectedRoute>
+                <BookingSummary />
+              </ProtectedRoute>
+            } />
             <Route path="/about" element={<About />} />
             <Route path="/packages" element={<Packages />} />
             <Route path="/packages/:id" element={<PackageDetails />} />
