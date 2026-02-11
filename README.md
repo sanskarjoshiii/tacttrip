@@ -2,7 +2,7 @@
 
 **TactTrip** is an **AI-powered travel agent and trip planner** built using **Lovable.dev**. It helps users plan personalized trips by generating smart itineraries based on destination, budget, duration, and travel preferences — all through a clean, interactive web experience.
 
-🌐 **Live App**: [https://tacttrip-ai-trip-planner.lovable.app/](https://tacttrip-ai-trip-planner.lovable.app/)
+🌐 **Live App**: (https://roaring-alpaca-4fef84.netlify.app/)
 
 ---
 
@@ -93,6 +93,3 @@ npm run dev
 
 ---
 
-
-⭐ Built with **Lovable.dev**
-If you enjoyed using **TactTrip**, consider starring the project and sharing it!
