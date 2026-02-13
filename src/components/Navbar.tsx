@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plane, MapPin, Sparkles, User, Menu, X, Hotel, Calendar, Info, LogOut, Package } from 'lucide-react';
+import { Plane, MapPin, Sparkles, User, Menu, X, Calendar, LogOut, Package } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -36,9 +36,6 @@ const Navbar = () => {
   const navLinks = [
     { to: '/destinations', label: 'Destinations', icon: MapPin },
     { to: '/packages', label: 'Packages', icon: Package },
-    { to: '/hotels', label: 'Hotels', icon: Hotel },
-    { to: '/flights', label: 'Book Trip', icon: Plane },
-    { to: '/about', label: 'About', icon: Info },
   ];
 
   const authLinks = [

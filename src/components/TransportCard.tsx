@@ -1,11 +1,14 @@
-import { Plane, Train, Bus, Clock, Star, Sparkles, Check } from 'lucide-react';
+import { Plane, Train, Bus, Clock, Star, Sparkles, Check, CheckCircle2 } from 'lucide-react';
 import { TransportOption } from '@/types/travel';
+import { Button } from '@/components/ui/button';
 
 interface TransportCardProps {
   option: TransportOption;
+  onSelect?: (option: TransportOption) => void;
+  isSelected?: boolean;
 }
 
-const TransportCard = ({ option }: TransportCardProps) => {
+const TransportCard = ({ option, onSelect, isSelected }: TransportCardProps) => {
   const getIcon = () => {
     switch (option.type) {
       case 'flight':
@@ -36,15 +39,26 @@ const TransportCard = ({ option }: TransportCardProps) => {
   return (
     <div
       className={`
-        relative p-5 rounded-xl border-2 transition-all duration-300 bg-card
-        ${option.isRecommended 
-          ? 'border-primary shadow-card-hover ring-2 ring-primary/20' 
-          : 'border-border shadow-card hover:shadow-card-hover hover:border-primary/30'
+        relative p-5 rounded-xl border-2 transition-all duration-300 bg-card cursor-pointer
+        ${isSelected
+          ? 'border-primary shadow-card-hover ring-2 ring-primary/20'
+          : option.isRecommended 
+            ? 'border-primary/50 shadow-card-hover ring-1 ring-primary/10' 
+            : 'border-border shadow-card hover:shadow-card-hover hover:border-primary/30'
         }
       `}
+      onClick={() => onSelect?.(option)}
     >
+      {/* Selected Badge */}
+      {isSelected && (
+        <div className="absolute -top-3 right-4 px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full flex items-center gap-1">
+          <CheckCircle2 className="w-3 h-3" />
+          Selected
+        </div>
+      )}
+
       {/* Recommended Badge */}
-      {option.isRecommended && (
+      {option.isRecommended && !isSelected && (
         <div className="absolute -top-3 left-4 px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full flex items-center gap-1">
           <Sparkles className="w-3 h-3" />
           AI Recommended
@@ -88,10 +102,22 @@ const TransportCard = ({ option }: TransportCardProps) => {
           </div>
         </div>
 
-        {/* Right: Price */}
-        <div className="text-right">
-          <p className="text-2xl font-bold text-foreground">₹{option.cost.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground">per person</p>
+        {/* Right: Price + Select */}
+        <div className="text-right flex flex-col items-end gap-2">
+          <div>
+            <p className="text-2xl font-bold text-foreground">₹{option.cost.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">per person</p>
+          </div>
+          {onSelect && (
+            <Button 
+              size="sm" 
+              variant={isSelected ? "default" : "outline"}
+              className={isSelected ? "gradient-hero" : ""}
+              onClick={(e) => { e.stopPropagation(); onSelect(option); }}
+            >
+              {isSelected ? "Selected" : "Select"}
+            </Button>
+          )}
         </div>
       </div>
 
