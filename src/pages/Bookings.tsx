@@ -189,8 +189,8 @@ const Bookings = () => {
           
           <div className="flex items-center justify-between">
             <span className="text-lg font-bold text-primary">₹{booking.price.toLocaleString()}</span>
-            <Button variant="outline" size="sm">
-              View Details
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/booking-details/${booking.id}`}>View Details</Link>
             </Button>
           </div>
         </CardContent>

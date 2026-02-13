@@ -21,6 +21,7 @@ import BookingConfirmation from "./pages/BookingConfirmation";
 import FlightBooking from "./pages/FlightBooking";
 import HotelBooking from "./pages/HotelBooking";
 import BookingSummary from "./pages/BookingSummary";
+import BookingDetails from "./pages/BookingDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,11 @@ const App = () => (
             <Route path="/bookings" element={
               <ProtectedRoute>
                 <Bookings />
+              </ProtectedRoute>
+            } />
+            <Route path="/booking-details/:id" element={
+              <ProtectedRoute>
+                <BookingDetails />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={
