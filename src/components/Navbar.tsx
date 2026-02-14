@@ -38,9 +38,7 @@ const Navbar = () => {
     { to: '/packages', label: 'Packages', icon: Package },
   ];
 
-  const authLinks = [
-    { to: '/bookings', label: 'My Bookings', icon: Calendar },
-  ];
+  const authLinks: { to: string; label: string; icon: typeof Calendar }[] = [];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">

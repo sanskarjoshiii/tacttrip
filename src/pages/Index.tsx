@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plane, ArrowRight, Sparkles, MapPin, Wallet, Clock, Shield, Users, Star } from 'lucide-react';
+import { Plane, ArrowRight, Sparkles, MapPin, Wallet, Clock, Shield, Users, Star, Target, Heart, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -180,6 +180,82 @@ const Index = () => {
               Start Planning Now
               <Plane className="w-5 h-5" />
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section className="py-16 md:py-24 bg-secondary/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <div className="w-20 h-20 rounded-2xl gradient-hero flex items-center justify-center mx-auto mb-6">
+              <Plane className="w-10 h-10 text-primary-foreground" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">About TactTrip</h2>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              TactTrip is an AI-powered travel planning platform designed to make trip planning 
+              effortless and enjoyable. We combine cutting-edge technology with real-time data 
+              to help you discover perfect destinations, find the best accommodations, and 
+              create unforgettable travel experiences.
+            </p>
+          </div>
+
+          {/* Mission */}
+          <div className="max-w-4xl mx-auto text-center mb-12 p-8 rounded-xl bg-card border border-border shadow-card">
+            <h3 className="text-2xl font-bold text-foreground mb-3">Our Mission</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              To revolutionize travel planning by leveraging artificial intelligence to provide 
+              personalized, budget-friendly, and hassle-free trip itineraries. We believe everyone 
+              deserves a memorable travel experience.
+            </p>
+          </div>
+
+          {/* What Makes Us Different */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
+            {[
+              { icon: Sparkles, title: 'AI-Powered Planning', description: 'Intelligent system analyzes thousands of options for the perfect itinerary.' },
+              { icon: MapPin, title: 'Real-Time Data', description: 'Up-to-date info on hotels, weather, transport from trusted sources.' },
+              { icon: Target, title: 'Smart Recommendations', description: 'Personalized suggestions based on your budget and travel style.' },
+              { icon: Heart, title: 'Made with Love', description: 'Built by travel enthusiasts who understand the joy of exploring.' },
+            ].map((feature) => (
+              <div key={feature.title} className="p-6 rounded-xl bg-card border border-border shadow-card text-center">
+                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <feature.icon className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Tech Stack */}
+          <div className="max-w-4xl mx-auto">
+            <h3 className="text-2xl font-bold text-foreground text-center mb-6">Technology Stack</h3>
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+              {['React + TypeScript', 'Tailwind CSS', 'Geoapify API', 'Open Weather API', 'Backend Functions', 'Vite'].map((tech) => (
+                <div key={tech} className="bg-card rounded-lg px-4 py-3 text-center font-medium text-foreground shadow-sm border border-border/50">
+                  {tech}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Team */}
+          <div className="max-w-4xl mx-auto text-center mt-12">
+            <h3 className="text-2xl font-bold text-foreground mb-6">Built By</h3>
+            <div className="flex justify-center">
+              <div className="text-center">
+                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-10 h-10 text-primary" />
+                </div>
+                <h4 className="font-semibold text-foreground">TactTrip Team</h4>
+                <p className="text-sm text-muted-foreground">Developers</p>
+                <div className="flex items-center justify-center gap-1 text-muted-foreground mt-2">
+                  <GraduationCap className="w-4 h-4" />
+                  <span className="text-xs">Department of Computer Engineering</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
