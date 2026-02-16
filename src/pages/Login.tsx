@@ -53,10 +53,10 @@ const Login = () => {
         toast.success('Welcome back!');
         navigate(from, { replace: true });
       } else {
-        toast.error('Invalid email or password');
+        toast.error('Invalid email or password. Please check your credentials.');
       }
     } catch (error) {
-      toast.error('Something went wrong');
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
