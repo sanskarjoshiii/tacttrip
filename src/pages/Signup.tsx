@@ -64,10 +64,10 @@ const Signup = () => {
         toast.success('Account created successfully!');
         navigate('/', { replace: true });
       } else {
-        toast.error('Email already exists');
+        toast.error('Could not create account. Email may already be in use.');
       }
     } catch (error) {
-      toast.error('Something went wrong');
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
