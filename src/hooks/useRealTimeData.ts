@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { WeatherInfo, Attraction } from '@/types/travel';
+import { WeatherInfo, Attraction, NearbyPlace } from '@/types/travel';
 import { toast } from 'sonner';
 
 interface RealTimeData {
@@ -8,6 +8,7 @@ interface RealTimeData {
   attractions: Attraction[];
   food: Attraction[];
   shopping: Attraction[];
+  nearbyPlaces: NearbyPlace[];
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -25,6 +26,7 @@ export const useRealTimeData = (destination: string): RealTimeData => {
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [food, setFood] = useState<Attraction[]>([]);
   const [shopping, setShopping] = useState<Attraction[]>([]);
+  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +41,7 @@ export const useRealTimeData = (destination: string): RealTimeData => {
 
     try {
       // Fetch all data in parallel
-      const [weatherResult, attractionsResult, foodResult, shoppingResult] = await Promise.allSettled([
+      const [weatherResult, attractionsResult, foodResult, shoppingResult, nearbyResult] = await Promise.allSettled([
         supabase.functions.invoke('get-weather', {
           body: { city: destination }
         }),
@@ -51,6 +53,9 @@ export const useRealTimeData = (destination: string): RealTimeData => {
         }),
         supabase.functions.invoke('get-places', {
           body: { city: destination, type: 'shopping' }
+        }),
+        supabase.functions.invoke('get-places', {
+          body: { city: destination, type: 'nearby' }
         }),
       ]);
 
@@ -82,6 +87,13 @@ export const useRealTimeData = (destination: string): RealTimeData => {
         setShopping(shoppingResult.value.data.places);
       } else {
         console.error('Shopping fetch failed:', shoppingResult);
+      }
+
+      // Process nearby places
+      if (nearbyResult.status === 'fulfilled' && nearbyResult.value.data?.places) {
+        setNearbyPlaces(nearbyResult.value.data.places);
+      } else {
+        console.error('Nearby places fetch failed:', nearbyResult);
       }
 
     } catch (err) {
@@ -120,6 +132,7 @@ export const useRealTimeData = (destination: string): RealTimeData => {
     attractions,
     food,
     shopping,
+    nearbyPlaces,
     isLoading,
     error,
     refetch: fetchData,

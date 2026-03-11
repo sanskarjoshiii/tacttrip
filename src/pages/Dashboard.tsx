@@ -48,11 +48,12 @@ const Dashboard = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch real-time data
-  const { 
-    weather: realTimeWeather, 
-    attractions: realTimeAttractions, 
-    food: realTimeFood, 
+  const {
+    weather: realTimeWeather,
+    attractions: realTimeAttractions,
+    food: realTimeFood,
     shopping: realTimeShopping,
+    nearbyPlaces: realTimeNearbyPlaces,
     isLoading: isRealTimeLoading,
     refetch: refetchRealTimeData
   } = useRealTimeData(destination);
@@ -544,7 +545,13 @@ const Dashboard = () => {
 
               {/* Experiences */}
               <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                <ExperienceSection attractions={displayAttractions} food={displayFood} shopping={displayShopping} destination={input.destination} />
+                <ExperienceSection
+                  attractions={displayAttractions}
+                  food={displayFood}
+                  shopping={displayShopping}
+                  destination={input.destination}
+                  nearbyPlaces={realTimeNearbyPlaces}
+                />
               </section>
             </div>
 

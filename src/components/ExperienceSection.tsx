@@ -1,14 +1,15 @@
-import { Camera, Utensils, ShoppingBag, MapPin } from 'lucide-react';
-import { Attraction } from '@/types/travel';
+import { Camera, Utensils, ShoppingBag, MapPin, Navigation } from 'lucide-react';
+import { Attraction, NearbyPlace } from '@/types/travel';
 
 interface ExperienceSectionProps {
   attractions: Attraction[];
   food: Attraction[];
   shopping: Attraction[];
   destination: string;
+  nearbyPlaces?: NearbyPlace[];
 }
 
-const ExperienceSection = ({ attractions, food, shopping, destination }: ExperienceSectionProps) => {
+const ExperienceSection = ({ attractions, food, shopping, destination, nearbyPlaces }: ExperienceSectionProps) => {
   const sections = [
     {
       title: 'Tourist Attractions',
@@ -65,6 +66,10 @@ const ExperienceSection = ({ attractions, food, shopping, destination }: Experie
                       src={item.image}
                       alt={item.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400';
+                      }}
                     />
                     {item.category && (
                       <span className="absolute top-2 right-2 px-2 py-1 bg-card/90 backdrop-blur-sm text-xs font-medium rounded-md">
@@ -84,6 +89,48 @@ const ExperienceSection = ({ attractions, food, shopping, destination }: Experie
           </div>
         );
       })}
+
+      {nearbyPlaces && nearbyPlaces.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
+            <div className="p-2 rounded-lg bg-green-500/10">
+              <Navigation className="w-4 h-4 text-green-500" />
+            </div>
+            Nearby Tourist Places
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {nearbyPlaces.map((place) => (
+              <div
+                key={place.id}
+                className="group overflow-hidden rounded-xl border border-border bg-card shadow-card hover:shadow-card-hover transition-all duration-300"
+              >
+                <div className="relative h-32 overflow-hidden">
+                  <img
+                    src={place.image}
+                    alt={place.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400';
+                    }}
+                  />
+                  <span className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 bg-black/60 backdrop-blur-sm text-white text-xs font-medium rounded-md">
+                    <MapPin className="w-3 h-3" />
+                    {place.distance}
+                  </span>
+                </div>
+                <div className="p-4">
+                  <h4 className="font-semibold text-foreground">{place.name}</h4>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    {place.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

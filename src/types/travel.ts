@@ -40,6 +40,14 @@ export interface Attraction {
   image: string;
 }
 
+export interface NearbyPlace {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  distance: string;
+}
+
 export interface WeatherInfo {
   condition: string;
   temperature: number;

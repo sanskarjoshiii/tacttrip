@@ -9,22 +9,129 @@ interface PlaceResult {
   id: string;
   name: string;
   description: string;
-  type: 'attraction' | 'food' | 'shopping';
+  type: 'attraction' | 'food' | 'shopping' | 'nearby';
   category?: string;
   image: string;
   rating?: number;
   address?: string;
+  distance?: string;
 }
 
+// Haversine distance in km
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Fetch a place-specific image from Wikipedia
+async function getWikimediaImage(placeName: string, city: string): Promise<string | null> {
+  if (!placeName || placeName.trim().length === 0) return null;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    // First try with the exact place name
+    const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(placeName)}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'TactTrip/1.0 (travel planner)' },
+    });
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const data = await response.json();
+      const pages = data?.query?.pages;
+      if (pages) {
+        const page = Object.values(pages)[0] as any;
+        if (page?.thumbnail?.source) {
+          return page.thumbnail.source;
+        }
+      }
+    }
+
+    // Fallback: try "PlaceName City" combined query
+    const controller2 = new AbortController();
+    const timeoutId2 = setTimeout(() => controller2.abort(), 4000);
+    const combinedQuery = `${placeName} ${city}`;
+    const url2 = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(combinedQuery)}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
+    const response2 = await fetch(url2, {
+      signal: controller2.signal,
+      headers: { 'User-Agent': 'TactTrip/1.0 (travel planner)' },
+    });
+    clearTimeout(timeoutId2);
+
+    if (response2.ok) {
+      const data2 = await response2.json();
+      const pages2 = data2?.query?.pages;
+      if (pages2) {
+        const page2 = Object.values(pages2)[0] as any;
+        if (page2?.thumbnail?.source) {
+          return page2.thumbnail.source;
+        }
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Fallback placeholder images by type
+const PLACEHOLDER_IMAGES: Record<string, string[]> = {
+  attraction: [
+    'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=400',
+    'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=400',
+    'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=400',
+    'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=400',
+    'https://images.unsplash.com/photo-1477587458883-47145ed94245?w=400',
+    'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=400',
+  ],
+  food: [
+    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
+    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400',
+    'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400',
+    'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400',
+    'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400',
+    'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=400',
+  ],
+  shopping: [
+    'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400',
+    'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400',
+    'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=400',
+    'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=400',
+    'https://images.unsplash.com/photo-1583922606661-0822ed0bd916?w=400',
+    'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=400',
+  ],
+  nearby: [
+    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400',
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
+    'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400',
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400',
+    'https://images.unsplash.com/photo-1519922639192-e73293ca430e?w=400',
+    'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400',
+    'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=400',
+    'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=400',
+  ],
+};
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { city, type } = await req.json();
-    
+
     if (!city) {
       return new Response(
         JSON.stringify({ error: 'City is required' }),
@@ -33,7 +140,7 @@ serve(async (req) => {
     }
 
     const apiKey = Deno.env.get('GEOAPIFY_API_KEY');
-    
+
     if (!apiKey) {
       console.error('GEOAPIFY_API_KEY not configured');
       return new Response(
@@ -46,7 +153,6 @@ serve(async (req) => {
 
     // Step 1: Geocode the city
     const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(city + ', India')}&format=json&apiKey=${apiKey}`;
-    
     const geoResponse = await fetch(geocodeUrl);
     const geoData = await geoResponse.json();
 
@@ -60,13 +166,69 @@ serve(async (req) => {
 
     const cityLocation = {
       lat: geoData.results[0].lat,
-      lng: geoData.results[0].lon
+      lng: geoData.results[0].lon,
     };
 
-    // Map our type to Geoapify categories
+    // ── NEARBY PLACES (50 km radius, tourist attractions) ──────────────────────
+    if (type === 'nearby') {
+      const nearbyUrl = `https://api.geoapify.com/v2/places?categories=tourism.sights,tourism.attraction&filter=circle:${cityLocation.lng},${cityLocation.lat},50000&limit=15&apiKey=${apiKey}`;
+      const nearbyResponse = await fetch(nearbyUrl);
+      const nearbyData = await nearbyResponse.json();
+      console.log(`Nearby places found: ${nearbyData.features?.length || 0}`);
+
+      if (!nearbyData.features || nearbyData.features.length === 0) {
+        return new Response(
+          JSON.stringify({ places: [], message: 'No nearby places found', source: 'no_results' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const rawNearby = nearbyData.features.slice(0, 8);
+
+      // Fetch Wikimedia images in parallel for all nearby places
+      const imagePromises = rawNearby.map((feature: any) =>
+        getWikimediaImage(feature.properties?.name || '', city)
+      );
+      const wikimediaImages = await Promise.all(imagePromises);
+
+      const nearbyPlaces: PlaceResult[] = rawNearby.map((feature: any, index: number) => {
+        const place = feature.properties;
+        const placeLat = feature.geometry?.coordinates?.[1] ?? cityLocation.lat;
+        const placeLng = feature.geometry?.coordinates?.[0] ?? cityLocation.lng;
+        const distKm = haversineDistance(cityLocation.lat, cityLocation.lng, placeLat, placeLng);
+        const distStr = distKm < 1
+          ? `${Math.round(distKm * 1000)} m away`
+          : `${distKm.toFixed(1)} km away`;
+
+        const image =
+          wikimediaImages[index] ||
+          PLACEHOLDER_IMAGES.nearby[index % PLACEHOLDER_IMAGES.nearby.length];
+
+        return {
+          id: `nearby-${place.place_id || index}`,
+          name: place.name || `Tourist spot near ${city}`,
+          description: place.formatted || place.address_line1 || `A notable tourist attraction near ${city}`,
+          type: 'nearby' as const,
+          image,
+          rating: place.datasource?.raw?.rating || (3.5 + Math.random() * 1.5),
+          address: place.formatted || place.address_line1,
+          distance: distStr,
+        };
+      });
+
+      const validNearby = nearbyPlaces.filter(p => p.name && !p.name.startsWith('Tourist spot near'));
+      const finalNearby = validNearby.length >= 3 ? validNearby : nearbyPlaces;
+
+      return new Response(
+        JSON.stringify({ places: finalNearby, source: 'geoapify' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ── ATTRACTIONS / FOOD / SHOPPING (10 km radius) ────────────────────────────
     let categories = 'tourism.sights,tourism.attraction';
     let ourType: 'attraction' | 'food' | 'shopping' = 'attraction';
-    
+
     if (type === 'food') {
       categories = 'catering.restaurant,catering.cafe';
       ourType = 'food';
@@ -75,9 +237,7 @@ serve(async (req) => {
       ourType = 'shopping';
     }
 
-    // Step 2: Search for places using Geoapify Places API
     const placesUrl = `https://api.geoapify.com/v2/places?categories=${categories}&filter=circle:${cityLocation.lng},${cityLocation.lat},10000&limit=10&apiKey=${apiKey}`;
-
     const placesResponse = await fetch(placesUrl);
     const placesData = await placesResponse.json();
     console.log(`Places search found ${placesData.features?.length || 0} places`);
@@ -90,45 +250,23 @@ serve(async (req) => {
       );
     }
 
-    // Different images for variety based on type
-    const attractionImages = [
-      'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=400', // Taj Mahal
-      'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=400', // India Gate
-      'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=400', // Hawa Mahal
-      'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=400', // Temple
-      'https://images.unsplash.com/photo-1477587458883-47145ed94245?w=400', // Fort
-      'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=400', // Palace
-    ];
-    
-    const foodImages = [
-      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400', // Restaurant interior
-      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400', // Fine dining
-      'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400', // Cafe
-      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400', // Plated food
-      'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400', // Indian food
-      'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=400', // Street food
-    ];
-    
-    const shoppingImages = [
-      'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400', // Mall
-      'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400', // Shopping bags
-      'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=400', // Storefront
-      'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=400', // Bazaar
-      'https://images.unsplash.com/photo-1583922606661-0822ed0bd916?w=400', // Market
-      'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=400', // Retail
-    ];
+    const rawPlaces = placesData.features.slice(0, 6);
 
-    const imagesByType = {
-      attraction: attractionImages,
-      food: foodImages,
-      shopping: shoppingImages
-    };
+    // For attractions, fetch place-specific images from Wikimedia in parallel
+    const imagePromises =
+      ourType === 'attraction'
+        ? rawPlaces.map((feature: any) =>
+            getWikimediaImage(feature.properties?.name || '', city)
+          )
+        : rawPlaces.map(() => Promise.resolve(null));
+
+    const wikimediaImages = await Promise.all(imagePromises);
 
     // Transform results
-    const places: PlaceResult[] = placesData.features.slice(0, 6).map((feature: any, index: number) => {
+    const places: PlaceResult[] = rawPlaces.map((feature: any, index: number) => {
       const place = feature.properties;
 
-      // Determine category based on type
+      // Food category label
       let category: string | undefined;
       if (ourType === 'food') {
         const cats = place.categories || [];
@@ -138,19 +276,23 @@ serve(async (req) => {
         else category = 'Restaurant';
       }
 
+      // Use Wikimedia image for attractions, otherwise use curated placeholder
+      const image =
+        wikimediaImages[index] ||
+        PLACEHOLDER_IMAGES[ourType][index % PLACEHOLDER_IMAGES[ourType].length];
+
       return {
         id: `${ourType}-${place.place_id || index}`,
         name: place.name || `${ourType.charAt(0).toUpperCase() + ourType.slice(1)} in ${city}`,
         description: place.formatted || place.address_line1 || `Popular ${ourType} in ${city}`,
         type: ourType,
-        category: category,
-        image: imagesByType[ourType][index % imagesByType[ourType].length],
+        category,
+        image,
         rating: place.datasource?.raw?.rating || (3.5 + Math.random() * 1.5),
         address: place.formatted || place.address_line1,
       };
     });
 
-    // Filter out places without proper names
     const validPlaces = places.filter(p => p.name && !p.name.includes(' in '));
     const finalPlaces = validPlaces.length > 0 ? validPlaces : places;
 
