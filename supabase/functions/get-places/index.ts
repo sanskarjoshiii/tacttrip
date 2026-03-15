@@ -53,7 +53,9 @@ async function getWikimediaImage(placeName: string, city: string): Promise<strin
       if (pages) {
         const page = Object.values(pages)[0] as any;
         if (page?.thumbnail?.source) {
-          return page.thumbnail.source;
+          let src: string = page.thumbnail.source;
+          if (src.startsWith('//')) src = `https:${src}`;
+          return src;
         }
       }
     }
@@ -75,7 +77,9 @@ async function getWikimediaImage(placeName: string, city: string): Promise<strin
       if (pages2) {
         const page2 = Object.values(pages2)[0] as any;
         if (page2?.thumbnail?.source) {
-          return page2.thumbnail.source;
+          let src: string = page2.thumbnail.source;
+          if (src.startsWith('//')) src = `https:${src}`;
+          return src;
         }
       }
     }

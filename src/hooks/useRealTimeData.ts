@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { WeatherInfo, Attraction, NearbyPlace } from '@/types/travel';
+import { WeatherInfo, Attraction, NearbyPlace, Activity, Monument } from '@/types/travel';
+import { getCuratedActivities, getCuratedMonuments } from '@/data/destinationData';
 import { toast } from 'sonner';
 
 interface RealTimeData {
@@ -9,6 +10,8 @@ interface RealTimeData {
   food: Attraction[];
   shopping: Attraction[];
   nearbyPlaces: NearbyPlace[];
+  activities: Activity[];
+  monuments: Monument[];
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -27,6 +30,8 @@ export const useRealTimeData = (destination: string): RealTimeData => {
   const [food, setFood] = useState<Attraction[]>([]);
   const [shopping, setShopping] = useState<Attraction[]>([]);
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [monuments, setMonuments] = useState<Monument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,6 +101,10 @@ export const useRealTimeData = (destination: string): RealTimeData => {
         console.error('Nearby places fetch failed:', nearbyResult);
       }
 
+      // Curated activities and monuments for the destination
+      setActivities(getCuratedActivities(destination));
+      setMonuments(getCuratedMonuments(destination));
+
     } catch (err) {
       console.error('Error fetching real-time data:', err);
       setError('Failed to fetch real-time data');
@@ -133,6 +142,8 @@ export const useRealTimeData = (destination: string): RealTimeData => {
     food,
     shopping,
     nearbyPlaces,
+    activities,
+    monuments,
     isLoading,
     error,
     refetch: fetchData,

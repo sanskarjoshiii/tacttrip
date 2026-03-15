@@ -54,6 +54,8 @@ const Dashboard = () => {
     food: realTimeFood,
     shopping: realTimeShopping,
     nearbyPlaces: realTimeNearbyPlaces,
+    activities: realTimeActivities,
+    monuments: realTimeMonuments,
     isLoading: isRealTimeLoading,
     refetch: refetchRealTimeData
   } = useRealTimeData(destination);
@@ -551,6 +553,8 @@ const Dashboard = () => {
                   shopping={displayShopping}
                   destination={input.destination}
                   nearbyPlaces={realTimeNearbyPlaces}
+                  activities={realTimeActivities}
+                  monuments={realTimeMonuments}
                 />
               </section>
             </div>

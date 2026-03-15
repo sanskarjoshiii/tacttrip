@@ -40,6 +40,23 @@ export interface Attraction {
   image: string;
 }
 
+export interface Activity {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  activityType: 'adventure' | 'water' | 'aerial' | 'cultural' | 'nature';
+  difficulty: 'Easy' | 'Moderate' | 'Hard';
+}
+
+export interface Monument {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  builtYear?: string;
+}
+
 export interface NearbyPlace {
   id: string;
   name: string;
