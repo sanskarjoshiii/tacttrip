@@ -32,21 +32,89 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
-// Fetch a place-specific image from Wikipedia
+// Source 1: Geoapify Place Details — reads OSM `image` / `wikimedia_commons` tags
+async function getGeoapifyPhoto(placeId: string, apiKey: string): Promise<string | null> {
+  if (!placeId) return null;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const url = `https://api.geoapify.com/v2/place-details?id=${encodeURIComponent(placeId)}&features=details&apiKey=${apiKey}`;
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!response.ok) return null;
+    const data = await response.json();
+    const raw = data?.features?.[0]?.properties?.datasource?.raw;
+    if (!raw) return null;
+    // Direct image URL stored in OSM
+    if (raw.image && typeof raw.image === 'string' && raw.image.startsWith('http')) {
+      return raw.image;
+    }
+    // Wikimedia Commons file reference stored in OSM
+    if (raw.wikimedia_commons) {
+      const commons = String(raw.wikimedia_commons);
+      const filename = commons.startsWith('File:') ? commons.slice(5) : commons;
+      return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=400`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Source 2: Wikipedia geosearch by coordinates — finds the nearest geo-tagged article
+async function getWikipediaPhotoByCoords(lat: number, lon: number): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=300&gslimit=3&format=json&origin=*`;
+    const response = await fetch(searchUrl, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'TactTrip/1.0 (travel planner)' },
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) return null;
+    const data = await response.json();
+    const results = data?.query?.geosearch;
+    if (!results || results.length === 0) return null;
+
+    // Fetch the thumbnail for the closest matching article
+    const controller2 = new AbortController();
+    const timeoutId2 = setTimeout(() => controller2.abort(), 5000);
+    const title = results[0].title;
+    const imgUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=600&origin=*`;
+    const imgResponse = await fetch(imgUrl, {
+      signal: controller2.signal,
+      headers: { 'User-Agent': 'TactTrip/1.0 (travel planner)' },
+    });
+    clearTimeout(timeoutId2);
+    if (!imgResponse.ok) return null;
+    const imgData = await imgResponse.json();
+    const pages = imgData?.query?.pages;
+    if (!pages) return null;
+    const page = Object.values(pages)[0] as any;
+    if (page?.thumbnail?.source) {
+      let src = page.thumbnail.source as string;
+      if (src.startsWith('//')) src = `https:${src}`;
+      return src;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Source 3: Wikipedia name search (original fallback)
 async function getWikimediaImage(placeName: string, city: string): Promise<string | null> {
   if (!placeName || placeName.trim().length === 0) return null;
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-    // First try with the exact place name
     const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(placeName)}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
     const response = await fetch(url, {
       signal: controller.signal,
       headers: { 'User-Agent': 'TactTrip/1.0 (travel planner)' },
     });
     clearTimeout(timeoutId);
-
     if (response.ok) {
       const data = await response.json();
       const pages = data?.query?.pages;
@@ -59,38 +127,63 @@ async function getWikimediaImage(placeName: string, city: string): Promise<strin
         }
       }
     }
-
-    // Fallback: try "PlaceName City" combined query
-    const controller2 = new AbortController();
-    const timeoutId2 = setTimeout(() => controller2.abort(), 4000);
-    const combinedQuery = `${placeName} ${city}`;
-    const url2 = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(combinedQuery)}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
-    const response2 = await fetch(url2, {
-      signal: controller2.signal,
-      headers: { 'User-Agent': 'TactTrip/1.0 (travel planner)' },
-    });
-    clearTimeout(timeoutId2);
-
-    if (response2.ok) {
-      const data2 = await response2.json();
-      const pages2 = data2?.query?.pages;
-      if (pages2) {
-        const page2 = Object.values(pages2)[0] as any;
-        if (page2?.thumbnail?.source) {
-          let src: string = page2.thumbnail.source;
-          if (src.startsWith('//')) src = `https:${src}`;
-          return src;
+    if (city) {
+      const controller2 = new AbortController();
+      const timeoutId2 = setTimeout(() => controller2.abort(), 4000);
+      const url2 = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(`${placeName} ${city}`)}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
+      const response2 = await fetch(url2, {
+        signal: controller2.signal,
+        headers: { 'User-Agent': 'TactTrip/1.0 (travel planner)' },
+      });
+      clearTimeout(timeoutId2);
+      if (response2.ok) {
+        const data2 = await response2.json();
+        const pages2 = data2?.query?.pages;
+        if (pages2) {
+          const page2 = Object.values(pages2)[0] as any;
+          if (page2?.thumbnail?.source) {
+            let src: string = page2.thumbnail.source;
+            if (src.startsWith('//')) src = `https:${src}`;
+            return src;
+          }
         }
       }
     }
-
     return null;
   } catch {
     return null;
   }
 }
 
-// Fallback placeholder images by type
+// Tries all photo sources in priority order:
+// 1. Geoapify place details (OSM tags) — most accurate
+// 2. Wikipedia geosearch by GPS coordinates — location-accurate
+// 3. Wikipedia name search — name-based fallback
+async function getBestPhoto(
+  placeId: string,
+  placeName: string,
+  city: string,
+  lat: number,
+  lon: number,
+  apiKey: string,
+): Promise<string | null> {
+  // Run the two fastest sources in parallel
+  const [geoapifyResult, coordResult] = await Promise.allSettled([
+    getGeoapifyPhoto(placeId, apiKey),
+    getWikipediaPhotoByCoords(lat, lon),
+  ]);
+
+  const geoapifyPhoto = geoapifyResult.status === 'fulfilled' ? geoapifyResult.value : null;
+  const coordPhoto = coordResult.status === 'fulfilled' ? coordResult.value : null;
+
+  if (geoapifyPhoto) return geoapifyPhoto;
+  if (coordPhoto) return coordPhoto;
+
+  // Final fallback: Wikipedia name search
+  return getWikimediaImage(placeName, city);
+}
+
+// Generic fallback images by place type
 const PLACEHOLDER_IMAGES: Record<string, string[]> = {
   attraction: [
     'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=400',
@@ -128,7 +221,7 @@ const PLACEHOLDER_IMAGES: Record<string, string[]> = {
   ],
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -173,7 +266,7 @@ serve(async (req) => {
       lng: geoData.results[0].lon,
     };
 
-    // ── NEARBY PLACES (50 km radius, tourist attractions) ──────────────────────
+    // ── NEARBY PLACES (50 km radius) ───────────────────────────────────────────
     if (type === 'nearby') {
       const nearbyUrl = `https://api.geoapify.com/v2/places?categories=tourism.sights,tourism.attraction&filter=circle:${cityLocation.lng},${cityLocation.lat},50000&limit=15&apiKey=${apiKey}`;
       const nearbyResponse = await fetch(nearbyUrl);
@@ -189,11 +282,14 @@ serve(async (req) => {
 
       const rawNearby = nearbyData.features.slice(0, 8);
 
-      // Fetch Wikimedia images in parallel for all nearby places
-      const imagePromises = rawNearby.map((feature: any) =>
-        getWikimediaImage(feature.properties?.name || '', city)
-      );
-      const wikimediaImages = await Promise.all(imagePromises);
+      // Fetch photos in parallel for all nearby places
+      const photoPromises = rawNearby.map((feature: any) => {
+        const place = feature.properties;
+        const lat = feature.geometry?.coordinates?.[1] ?? cityLocation.lat;
+        const lon = feature.geometry?.coordinates?.[0] ?? cityLocation.lng;
+        return getBestPhoto(place.place_id || '', place.name || '', city, lat, lon, apiKey);
+      });
+      const photos = await Promise.all(photoPromises);
 
       const nearbyPlaces: PlaceResult[] = rawNearby.map((feature: any, index: number) => {
         const place = feature.properties;
@@ -205,7 +301,7 @@ serve(async (req) => {
           : `${distKm.toFixed(1)} km away`;
 
         const image =
-          wikimediaImages[index] ||
+          photos[index] ||
           PLACEHOLDER_IMAGES.nearby[index % PLACEHOLDER_IMAGES.nearby.length];
 
         return {
@@ -256,21 +352,19 @@ serve(async (req) => {
 
     const rawPlaces = placesData.features.slice(0, 6);
 
-    // For attractions, fetch place-specific images from Wikimedia in parallel
-    const imagePromises =
-      ourType === 'attraction'
-        ? rawPlaces.map((feature: any) =>
-            getWikimediaImage(feature.properties?.name || '', city)
-          )
-        : rawPlaces.map(() => Promise.resolve(null));
-
-    const wikimediaImages = await Promise.all(imagePromises);
+    // Fetch best photos in parallel for all places
+    const photoPromises = rawPlaces.map((feature: any) => {
+      const place = feature.properties;
+      const lat = feature.geometry?.coordinates?.[1] ?? cityLocation.lat;
+      const lon = feature.geometry?.coordinates?.[0] ?? cityLocation.lng;
+      return getBestPhoto(place.place_id || '', place.name || '', city, lat, lon, apiKey);
+    });
+    const photos = await Promise.all(photoPromises);
 
     // Transform results
     const places: PlaceResult[] = rawPlaces.map((feature: any, index: number) => {
       const place = feature.properties;
 
-      // Food category label
       let category: string | undefined;
       if (ourType === 'food') {
         const cats = place.categories || [];
@@ -280,9 +374,8 @@ serve(async (req) => {
         else category = 'Restaurant';
       }
 
-      // Use Wikimedia image for attractions, otherwise use curated placeholder
       const image =
-        wikimediaImages[index] ||
+        photos[index] ||
         PLACEHOLDER_IMAGES[ourType][index % PLACEHOLDER_IMAGES[ourType].length];
 
       return {
